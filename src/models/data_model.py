@@ -1,9 +1,16 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
-
+from datetime import date, datetime
 # All media objects need a timestamp
 class Media(BaseModel):
-    date: str
+    date: datetime
+
+    @field_validator("date", mode='before')
+    def string_to_date(cls, v: object) -> object:
+        if isinstance(v, str):
+            return datetime.strptime(v, "%d-%b-%Y").date()
+        return v
+
 
 # Decorators deal with changes in data types and structure
 class MediaDecorator(Media):

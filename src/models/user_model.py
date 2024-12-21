@@ -6,6 +6,7 @@ from pydantic import BaseModel, EmailStr
 app = FastAPI()
 
 
+#LOGIN
 class UserIn(BaseModel):
     username: str
     password: str
@@ -14,6 +15,11 @@ class UserIn(BaseModel):
 
 class UserOut(BaseModel):
     username: str
+    email: EmailStr
+    full_name: str | None = None
+
+#GUEST
+class GuestUserIn(BaseModel):
     email: EmailStr
     full_name: str | None = None
 
