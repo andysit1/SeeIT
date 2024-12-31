@@ -2,7 +2,7 @@ Fast As Possible - Christmas Break Development
 
 Purpose -> Individualistic QR code scanner platform for people to see good!
 
-Frontend -> use a random site builder for fastest end game home landing page
+Frontend -> use a random site builder for fastest end game home landing page or do we want a more nuance site builder since we need the platform
 
 people print qr code on box. then they link their qr code to their "inbox link" -> email
 
