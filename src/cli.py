@@ -1,6 +1,5 @@
 from datetime import datetime
 from models.data_model import BinModel, TextMediaDecorator, Media
-import firebase_admin
 import pyqrcode
 
 # could abstract into CacheDB vs FireBaseDB -> shall see when needed...
@@ -20,7 +19,6 @@ class DB:
 
   def create_user(self, email: str, bin_description : str):
     #validation
-
     if not self.is_user_in_database(email=email):
       print(f"Saving email {email} into database")
       self.email_to_model[email] = BinModel(
@@ -29,7 +27,6 @@ class DB:
         link=f"localhost:8000/{1}",
         bin_content=[]
       )
-
 
   def add_media(self, email: str, content: str):
     media= Media(
@@ -74,6 +71,9 @@ class Manager:
     self.db : DB = DB()
     self.qr_builder : QRGenerator = QRGenerator()
 
+  def get_user(self, email : str):
+    return self.db.get_user(email=email)
+
   def create_user_and_return_qr_code(self, email: str, bin_description : str):
     #create user
     self.db.create_user(
@@ -91,6 +91,8 @@ class Manager:
     else:
       print("Error in create_user(), not saving into DB.")
 
+
+
 if __name__ == "__main__":
 
   """
@@ -106,3 +108,5 @@ if __name__ == "__main__":
     email="andysit173@gmail.com",
     bin_description="my first bin"
     )
+
+  print(manager.get_user(email="andysit173@gmail.com"))

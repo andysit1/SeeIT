@@ -11,7 +11,6 @@ class Media(BaseModel):
             return datetime.strptime(v, "%d-%b-%Y").date()
         return v
 
-
 # Decorators deal with changes in data types and structure
 class MediaDecorator(Media):
     wrap_media: Optional[Media] = Field(None, description="Wrapped media object")
@@ -29,12 +28,14 @@ class BinModel(BaseModel):
     link: str
     bin_content: List[Media]
 
+
+
 # Testing the flow of models
 if __name__ == "__main__":
     print("Testing flow of models")
 
     # Create a basic Media instance (change base on given data)
-    note = Media(date="Today")
+    note = Media(date=datetime.now())
     print("Original Media:", note)
 
     # Wrap it with a TextMediaDecorator
