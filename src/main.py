@@ -1,10 +1,14 @@
 from typing import Union
-from fastapi import FastAPI
+from fastapi import FastAPI, Form
 from fastapi.responses import StreamingResponse
 from typing import Any
 from models.user_model import SignUpSchema, LoginUpSchema
 import io
 import pyqrcode
+from fastapi.responses import HTMLResponse, JSONResponse
+
+
+
 
 app = FastAPI()
 
@@ -21,6 +25,11 @@ firebaseConfig = {
 };
 
 
+"""
+    Ideal keep the base static so I can just use github sites for MVP
+    easy saving on costs and experimentation
+"""
+
 @app.post("/signup")
 async def create_an_account(user_data: SignUpSchema):
     pass
@@ -29,9 +38,6 @@ async def create_an_account(user_data: SignUpSchema):
 async def create_access_token(user_data: LoginUpSchema):
     pass
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
 
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: Union[str, None] = None):
@@ -41,9 +47,6 @@ def read_item(item_id: int, q: Union[str, None] = None):
 def get_user_bins(user_id : str):
     return {"user_id" : user_id}
 
-@app.get("/send")
-def dump_media():
-    return {"msg": "hello world"}
 
 # example of returning qr code...
 # used when user wants to start using their qr code.
@@ -57,3 +60,73 @@ def generate_qrcode(data: str):
     return StreamingResponse(buffer, media_type="image/png")
 
 #QR creator, ->
+@app.get("/", response_class=HTMLResponse)
+async def read_root():
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>My FastAPI Page</title>
+    </head>
+    <body>
+        <h1>Hello, FastAPI!</h1>
+        <p>This is an example of returning HTML from a FastAPI route.</p>
+    </body>
+    </html>
+    """
+    return html_content
+
+
+#This could be our social network aspect of the site..
+#Can discover others in the world doing cool stuff
+
+# @app.get("/discover", response_class=HTMLResponse)
+# async def discover_other_impacts():
+@app.get("/{user_id_slug}/{bin_id_slug}", response_class=HTMLResponse)
+async def display_context(user_id_slug: str, bin_id_slug: str):
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Send Data</title>
+    </head>
+    <body>
+        <h1>Send Data for User {user_id_slug} and Bin {bin_id_slug}</h1>
+        <form action="/send/{user_id_slug}/{bin_id_slug}" method="post">
+            <label for="input_text">Enter Text:</label>
+            <input type="text" id="input_text" name="input_text" required>
+            <button type="submit">Send</button>
+        </form>
+    </body>
+    </html>
+    """
+    return html_content
+
+
+
+# Endpoint to receive form data and return it as JSON and save it
+@app.post("/send/{user_id_slug}/{bin_id_slug}")
+async def receive_data(user_id_slug: str, bin_id_slug: str, input_text: str = Form(...)):
+    # Return the received context as JSON
+
+    # do db interactions where..
+    """
+        grab the data from user/bin_id
+            pull the media bucket or that specific model out of the data
+            make it more extensible with better coding practices
+
+        add the new media given type of medium + add a boolean if it's from a verified account
+            will be used in the future when we want suspcious bin or good bin. (which is up to the user... later (implmentation))
+
+        after making new entry, rewrite the data over the last "media" object.
+            might need to check if this is good db practice
+    """
+
+
+    return JSONResponse(
+        content={
+            "user_id": user_id_slug,
+            "bin_id": bin_id_slug,
+            "input_text": input_text
+        }
+    )
