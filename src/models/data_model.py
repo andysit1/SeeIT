@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 from datetime import date, datetime
+
+
 # All media objects need a timestamp
 class Media(BaseModel):
     date: datetime
