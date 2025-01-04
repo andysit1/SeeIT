@@ -1,5 +1,8 @@
 Fast As Possible - Christmas Break Development
 
+Links!
+https://railway.com/features
+
 Purpose -> Individualistic QR code scanner platform for people to see good!
 
 Frontend -> use a random site builder for fastest end game home landing page or do we want a more nuance site builder since we need the platform
