@@ -34,7 +34,7 @@ class Media(Base):
     # Relationship back to Bin
     bin = relationship("Bin", back_populates="media_items")
 
-#pydantic objects
+#pydantic objects might
 class MediaBase(BaseModel):
     date: datetime
     type: str
@@ -71,37 +71,133 @@ engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base.metadata.create_all(bind=engine)
 
+def add_more_media_to_bin(bin_id, new_media_items):
+    """
+    Add more media objects to an existing bin.
+
+    :param bin_id: The ID of the bin to update.
+    :param new_media_items: A list of MediaCreate objects to add.
+    """
+    session = SessionLocal()
+    try:
+        # Fetch the existing bin
+        db_bin = session.query(Bin).filter(Bin.bin_id == bin_id).first()
+        if not db_bin:
+            print(f"Bin with bin_id {bin_id} not found.")
+            return
+
+        # Create Media objects and append them
+        for media_data in new_media_items:
+            new_media = Media(
+                date=media_data.date,
+                type=media_data.type,
+                content=media_data.content
+            )
+            db_bin.media_items.append(new_media)
+
+        # Commit changes
+        session.commit()
+        print(f"Added {len(new_media_items)} media items to Bin {bin_id}.")
+    except Exception as e:
+        session.rollback()
+        print(f"Error adding media to bin: {e}")
+    finally:
+        session.close()
+
 # Test Script
 def test_bin_and_media():
     # Create a new session
     session = SessionLocal()
 
-    # Create a Bin object with associated Media
-    new_bin = Bin(
-        description="Test Bin",
-        bin_id=1,
-        link="http://example.com",
-        media_items=[
-            Media(date=datetime.now(), type="text", content="Sample text content"),
-            Media(date=datetime.now(), type="image", content="image.png")
-        ]
-    )
+    try:
+        # Create a Bin object with associated Media
+        new_bin = Bin(
+            description="Test Bin",
+            bin_id=1,
+            link="http://example.com",
+            media_items=[
+                Media(date=datetime.now(), type="text", content="Sample text content"),
+                Media(date=datetime.now(), type="image", content="image.png")
+            ]
+        )
 
-    session.add(new_bin)
-    session.commit()
+        session.add(new_bin)
+        session.commit()
 
-    # Fetch the Bin from the database
-    db_bin = session.query(Bin).filter(Bin.bin_id == 1).first()
+        # Fetch the Bin from the database
+        db_bin = session.query(Bin).filter(Bin.bin_id == 1).first()
 
-    # Convert to Pydantic model
-    bin_response = BinResponse.model_validate(obj=db_bin, from_attributes=True)
+        # Convert to Pydantic model
+        bin_response = BinResponse.model_validate(obj=db_bin, from_attributes=True)
 
-    # Print the Pydantic response
-    print(bin_response.model_dump_json(indent=4))
+        # Print the Pydantic response
+        print(bin_response.model_dump_json(indent=4))
 
-    # Close session
-    session.close()
+        # Close session
+        session.close()
+    except:
+        print("Bin ID already exists.")
+
+
+#pretty much a DB practice function
+def fetch_bin_with_media(bin_id):
+    session = SessionLocal()
+    try:
+        db_bin = session.query(Bin).filter(Bin.bin_id == bin_id).first()
+        if db_bin:
+            bin_response = BinResponse.model_validate(obj=db_bin, from_attributes=True)
+            print(bin_response.model_dump_json(indent=4))
+        else:
+            print(f"Bin with bin_id {bin_id} not found.")
+    finally:
+        session.close()
+
+
+def remove_all_media_from_bin(bin_id: int):
+    session = SessionLocal()
+
+    try:
+        # Fetch the Bin object
+        db_bin = session.query(Bin).filter(Bin.bin_id == bin_id).first()
+        if db_bin:
+            # Remove all associated media
+            for media in db_bin.media_items:
+                session.delete(media)
+            session.commit()
+            print(f"All media items associated with Bin ID {bin_id} have been deleted.")
+        else:
+            print(f"No Bin found with Bin ID {bin_id}.")
+    finally:
+        session.close()
+
+
+def remove_bin(bin_id: int):
+    session = SessionLocal()
+
+    try:
+        # Fetch the Bin object
+        db_bin = session.query(Bin).filter(Bin.bin_id == bin_id).first()
+        if db_bin:
+            session.delete(db_bin)  # This will also delete associated Media items
+            session.commit()
+            print(f"Bin with ID {bin_id} and its media items have been deleted.")
+        else:
+            print(f"No Bin found with Bin ID {bin_id}.")
+    finally:
+        session.close()
+
 
 # Run the test
 if __name__ == "__main__":
     test_bin_and_media()
+
+    additional_media_items = [
+        MediaCreate(date=datetime.now(), type="text", content="Another text content"),
+        MediaCreate(date=datetime.now(), type="image", content="another_image.png")
+    ]
+
+    # Append the new media to the bin with bin_id = 1
+    add_more_media_to_bin(bin_id=1, new_media_items=additional_media_items)
+
+    # Fetch and display the updated bin
+    fetch_bin_with_media(bin_id=1)

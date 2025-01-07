@@ -1,7 +1,6 @@
 import firebase_admin
 from firebase_admin import credentials, auth
 
-
 #Base functions, needs verification and authentication with tokens but for now it's okay!
 class FirebaseAuthFacade:
     def __init__(self, credentials_path: str):

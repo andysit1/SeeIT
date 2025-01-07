@@ -1,51 +1,67 @@
-from pydantic import BaseModel, Field, field_validator
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, create_engine, Text, create_engine
+from sqlalchemy.orm import relationship, declarative_base, sessionmaker
+from datetime import datetime
+from sqlalchemy import create_engine
+
+from pydantic import BaseModel, Field
 from typing import List, Optional
-from datetime import date, datetime
 
 
-# All media objects need a timestamp
-class Media(BaseModel):
+Base = declarative_base()
+
+
+#sqlacademy objects
+class Bin(Base):
+    __tablename__ = 'bins'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    description = Column(String, nullable=False)
+    bin_id = Column(Integer, unique=True, nullable=False)
+    link = Column(String, nullable=False)
+
+    # One-to-many relationship with Media
+    media_items = relationship("Media", back_populates="bin")
+
+class Media(Base):
+    __tablename__ = 'media'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    bin_id = Column(Integer, ForeignKey('bins.id'), nullable=False)
+    date = Column(DateTime, nullable=False, default=datetime.utcnow)
+    type = Column(String, nullable=False)  # Classification of media type (e.g., text, image)
+    content = Column(Text, nullable=False)  # Text or path to image content
+
+    # Relationship back to Bin
+    bin = relationship("Bin", back_populates="media_items")
+
+#pydantic objects might
+class MediaBase(BaseModel):
     date: datetime
+    type: str
+    content: str
 
-    @field_validator("date", mode='before')
-    def string_to_date(cls, v: object) -> object:
-        if isinstance(v, str):
-            return datetime.strptime(v, "%d-%b-%Y").date()
-        return v
+class MediaCreate(MediaBase):
+    pass
 
-# Decorators deal with changes in data types and structure
-class MediaDecorator(Media):
-    wrap_media: Optional[Media] = Field(None, description="Wrapped media object")
+class MediaResponse(MediaBase):
+    id: int
+    bin_id: int
 
-class TextMediaDecorator(MediaDecorator):
-    txt_content: str = Field(..., description="Text content for the media")
+    class Config:
+        orm_mode = True
 
-class ImageMediaDecorator(MediaDecorator):
-    image_content: str = Field(..., description="Image content for the media")
-
-# Holds media, description, link
-class BinModel(BaseModel):
+class BinBase(BaseModel):
     description: str
     bin_id: int
     link: str
-    bin_content: List[Media]
 
+class BinCreate(BinBase):
+    media_items: List[MediaCreate] = Field(default_factory=list)
 
+class BinResponse(BinBase):
+    id: int #the primary key in the db...
+    media_items: List[MediaResponse] = Field(default_factory=list)
 
-# Testing the flow of models
-if __name__ == "__main__":
-    print("Testing flow of models")
+    class Config:
+        orm_mode = True
 
-    # Create a basic Media instance (change base on given data)
-    note = Media(date=datetime.now())
-    print("Original Media:", note)
-
-    # Wrap it with a TextMediaDecorator
-    text_decorator = TextMediaDecorator(wrap_media=note, date=note.date, txt_content="Hello")
-    print("TextMediaDecorator:", text_decorator)
-
-    # Wrap it with an ImageMediaDecorator
-    image_decorator = ImageMediaDecorator(
-        wrap_media=text_decorator, date=text_decorator.date, image_content="image.png"
-    )
-    print("ImageMediaDecorator:", image_decorator)
