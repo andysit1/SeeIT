@@ -1,10 +1,9 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, create_engine, Text, create_engine
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, create_engine, Text
 from sqlalchemy.orm import relationship, declarative_base, sessionmaker
 from datetime import datetime
-from sqlalchemy import create_engine
 
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List
 
 Base = declarative_base()
 
