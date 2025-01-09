@@ -10,15 +10,20 @@ Base = declarative_base()
 # For now ill just keep all my models here for now
 # any time we need a specific function we write it here to pull and add -> its more flexible and fast for me now.
 
+# User Model
 class User(Base):
     __tablename__ = 'users'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    #username
-    #passward
-    #other information I think we should have..
-    bin = relationship("Bin", back_populates="media_items")
 
-#sqlacademy objects
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String, nullable=False, unique=True)
+    password = Column(String, nullable=False)
+    email = Column(String, nullable=False, unique=True)  # Example of additional user info
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationship with Bin
+    bins = relationship("Bin", back_populates="user")
+
+# Bin Model
 class Bin(Base):
     __tablename__ = 'bins'
 
@@ -27,10 +32,14 @@ class Bin(Base):
     bin_id = Column(Integer, unique=True, nullable=False)
     link = Column(String, nullable=False)
 
-    # One-to-many relationship with Media and User
-    media_items = relationship("Media", back_populates="bin")
-    user = relationship("User", back_populates="bin")
+    # Foreign Key and Relationship with User
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    user = relationship("User", back_populates="bins")
 
+    # One-to-many relationship with Media
+    media_items = relationship("Media", back_populates="bin")
+
+# Media Model
 class Media(Base):
     __tablename__ = 'media'
 
@@ -39,11 +48,10 @@ class Media(Base):
     date = Column(DateTime, nullable=False, default=datetime.utcnow)
     type = Column(String, nullable=False)  # Classification of media type (e.g., text, image)
     content = Column(Text, nullable=False)  # Text or path to image content
-
     # Relationship back to Bin
     bin = relationship("Bin", back_populates="media_items")
 
-#pydantic objects might
+# Media Pydantic Models
 class MediaBase(BaseModel):
     date: datetime
     type: str
@@ -57,8 +65,9 @@ class MediaResponse(MediaBase):
     bin_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
+# Bin Pydantic Models
 class BinBase(BaseModel):
     description: str
     bin_id: int
@@ -66,14 +75,31 @@ class BinBase(BaseModel):
 
 class BinCreate(BinBase):
     media_items: List[MediaCreate] = Field(default_factory=list)
+    user_id: int
 
 class BinResponse(BinBase):
-    id: int #the primary key in the db...
+    id: int
     media_items: List[MediaResponse] = Field(default_factory=list)
+    user_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
+# User Pydantic Models
+class UserBase(BaseModel):
+    username: str
+    email: str
+
+class UserCreate(UserBase):
+    password: str
+
+class UserResponse(UserBase):
+    id: int
+    created_at: datetime
+    bins: List[BinResponse] = Field(default_factory=list)
+
+    class Config:
+        from_attributes = True
 
 
 # SQLAlchemy Database Setup
@@ -81,6 +107,7 @@ DATABASE_URL = "sqlite:///test.db"
 engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base.metadata.create_all(bind=engine)
+
 
 def add_more_media_to_bin(bin_id, new_media_items):
     """
@@ -171,6 +198,18 @@ def test_bin_and_media():
         print("Bin ID already exists.")
 
 
+def fetch_user_by_email(email):
+    session = SessionLocal()
+    try:
+        db_bin = session.query(User).filter(User.email == email).first()
+        if db_bin:
+            user_response = UserResponse.model_validate(obj=db_bin, from_attributes=True)
+            print(user_response.model_dump_json(indent=4))
+        else:
+            print(f"User with user_id {email} not found.")
+    finally:
+        session.close()
+
 #pretty much a DB practice function
 def fetch_bin_with_media(bin_id):
     session = SessionLocal()
@@ -219,10 +258,145 @@ def remove_bin(bin_id: int):
         session.close()
 
 
-# to implment
+# Functions
+def get_bins_by_userid(user_id: int):
+    session = SessionLocal()
+    try:
+        user = session.query(User).filter(User.id == user_id).first()
+        if user:
+            user_response = UserResponse.model_validate(obj=user, from_attributes=True)
+            print(user_response.model_dump_json(indent=4))
+        else:
+            print(f"User with ID {user_id} not found.")
+    finally:
+        session.close()
 
-def get_bins_by_userid(user_id):
-    pass
 
-def get_user(user_id):
-    pass
+def get_user(user_id: int):
+    session = SessionLocal()
+    try:
+        user = session.query(User).filter(User.id == user_id).first()
+        if user:
+            user_response = UserResponse.model_validate(obj=user, from_attributes=True)
+            print(user_response.model_dump_json(indent=4))
+        else:
+            print(f"User with ID {user_id} not found.")
+    finally:
+        session.close()
+
+
+# Example Usage
+def example():
+    session = SessionLocal()
+    try:
+        # Create a user
+        new_user = User(username="test_user", password="securepass", email="test@example.com")
+        session.add(new_user)
+        session.commit()
+
+        # Create a bin associated with the user
+        new_bin = Bin(description="User's Bin", bin_id=100, link="http://example.com", user_id=new_user.id)
+        session.add(new_bin)
+        session.commit()
+
+        # Fetch and display the user's bins
+        get_bins_by_userid(new_user.id)
+
+        # Add media to the bin
+        add_more_media_to_bin(100, [
+            MediaCreate(date=datetime.now(), type="text", content="Example content"),
+            MediaCreate(date=datetime.now(), type="image", content="image.png")
+        ])
+
+        # Fetch and display the bin
+        fetch_bin_with_media(100)
+        try:
+            fetch_user_by_email("test@example.com")
+        except:
+            print("fetch_user_by_email() not working")
+
+        try:
+            get_user(1)
+        except:
+            print("fetch_user_by_email() not working")
+
+
+    finally:
+        session.close()
+
+
+#Test Cases -> basic test cases ai generated just to see what i should be doing... future will implement test dir with pytest
+
+def test_create_new_bin():
+    # Arrange
+    bin_data = {
+        'description': "Test Bin 2",
+        'b_id': 2,
+        'link': "http://example2.com"
+    }
+
+    # Act
+    create_new_bin(bin_data['description'], bin_data['b_id'], bin_data['link'])
+
+    # Assert
+    session = SessionLocal()
+    db_bin = session.query(Bin).filter(Bin.bin_id == bin_data['b_id']).first()
+    assert db_bin is not None
+    assert db_bin.description == bin_data['description']
+    assert db_bin.link == bin_data['link']
+    session.close()
+
+def test_add_more_media_to_bin():
+    # Arrange
+    bin_id = 1
+    media_items = [
+        MediaCreate(date=datetime.now(), type="text", content="New media content")
+    ]
+
+    # Act
+    add_more_media_to_bin(bin_id, media_items)
+
+    # Assert
+    session = SessionLocal()
+    db_bin = session.query(Bin).filter(Bin.bin_id == bin_id).first()
+    assert db_bin is not None
+    assert len(db_bin.media_items) == 3  # Assuming there were already 2 media items
+    session.close()
+
+
+
+def test_remove_all_media_from_bin():
+    # Arrange
+    bin_id = 1
+
+    # Act
+    remove_all_media_from_bin(bin_id)
+
+    # Assert
+    session = SessionLocal()
+    db_bin = session.query(Bin).filter(Bin.bin_id == bin_id).first()
+    assert len(db_bin.media_items) == 0
+    session.close()
+
+
+def test_remove_bin():
+    # Arrange
+    bin_id = 2
+
+    # Act
+    remove_bin(bin_id)
+
+    # Assert
+    session = SessionLocal()
+    db_bin = session.query(Bin).filter(Bin.bin_id == bin_id).first()
+    assert db_bin is None
+    session.close()
+
+
+
+
+
+
+if __name__ == "__main__":
+    #for now just use example to test usecase
+    example()
