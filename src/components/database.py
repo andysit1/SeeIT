@@ -10,6 +10,14 @@ Base = declarative_base()
 # For now ill just keep all my models here for now
 # any time we need a specific function we write it here to pull and add -> its more flexible and fast for me now.
 
+class User(Base):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    #username
+    #passward
+    #other information I think we should have..
+    bin = relationship("Bin", back_populates="media_items")
+
 #sqlacademy objects
 class Bin(Base):
     __tablename__ = 'bins'
@@ -19,8 +27,9 @@ class Bin(Base):
     bin_id = Column(Integer, unique=True, nullable=False)
     link = Column(String, nullable=False)
 
-    # One-to-many relationship with Media
+    # One-to-many relationship with Media and User
     media_items = relationship("Media", back_populates="bin")
+    user = relationship("User", back_populates="bin")
 
 class Media(Base):
     __tablename__ = 'media'
@@ -208,3 +217,12 @@ def remove_bin(bin_id: int):
             print(f"No Bin found with Bin ID {bin_id}.")
     finally:
         session.close()
+
+
+# to implment
+
+def get_bins_by_userid(user_id):
+    pass
+
+def get_user(user_id):
+    pass
