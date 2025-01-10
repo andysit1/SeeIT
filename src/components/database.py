@@ -108,6 +108,36 @@ engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base.metadata.create_all(bind=engine)
 
+def is_user_exist_by_username(username: str) -> bool:
+    """
+    Check if a user with the given username already exists in the database.
+
+    :param email: The username to check.
+    :return: True if the user exists, False otherwise.
+    """
+    session = SessionLocal()
+    try:
+        # Query the database for a user with the given email
+        user = session.query(User).filter(User.username == username).first()
+        return user is not None
+    finally:
+        session.close()
+
+def is_user_exist_by_email(email: str) -> bool:
+    """
+    Check if a user with the given email already exists in the database.
+
+    :param email: The email to check.
+    :return: True if the user exists, False otherwise.
+    """
+    session = SessionLocal()
+    try:
+        # Query the database for a user with the given email
+        user = session.query(User).filter(User.email == email).first()
+        return user is not None
+    finally:
+        session.close()
+
 
 def add_more_media_to_bin(bin_id, new_media_items):
     """
@@ -198,6 +228,7 @@ def test_bin_and_media():
         print("Bin ID already exists.")
 
 
+
 def fetch_user_by_email(email):
     session = SessionLocal()
     try:
@@ -218,6 +249,7 @@ def fetch_bin_with_media(bin_id):
         if db_bin:
             bin_response = BinResponse.model_validate(obj=db_bin, from_attributes=True)
             print(bin_response.model_dump_json(indent=4))
+            return bin_response
         else:
             print(f"Bin with bin_id {bin_id} not found.")
     finally:
@@ -279,11 +311,50 @@ def get_user(user_id: int):
         if user:
             user_response = UserResponse.model_validate(obj=user, from_attributes=True)
             print(user_response.model_dump_json(indent=4))
+            return user_response
         else:
             print(f"User with ID {user_id} not found.")
     finally:
         session.close()
 
+def create_user(username:str, password:str, email:str) -> UserResponse:
+    session = SessionLocal()
+    try:
+        if not is_user_exist_by_email(email) and not is_user_exist_by_username(username):
+            new_user = User(username=username, password=password, email=email)
+            session.add(new_user)
+            session.commit()
+
+            user_response = UserResponse.model_validate(new_user)
+            return user_response
+        else:
+            print(f"User already exists")
+    except:
+        print(f'Unable to create user')
+    finally:
+        session.close()
+
+def create_bin(bin_create_obj: BinCreate) -> BinResponse:
+    session = SessionLocal()
+    try:
+        user_response = get_user(bin_create_obj.user_id)
+
+        if user_response:
+            new_bin = Bin(
+                description=bin_create_obj.description,
+                bin_id = bin_create_obj.bin_id,
+                link=bin_create_obj.link,
+                user_id=bin_create_obj.user_id
+            )
+            session.add(new_bin)
+            session.commit()
+            return BinResponse.model_validate(new_bin)
+        else:
+            print("Given user_id does not exist")
+    except Exception as e:
+        print(f"Unable to create bin: {e}")
+    finally:
+        session.close()
 
 # Example Usage
 def example():
@@ -393,10 +464,28 @@ def test_remove_bin():
     session.close()
 
 
-
-
-
-
 if __name__ == "__main__":
     #for now just use example to test usecase
-    example()
+    user_response = create_user(
+        username="andy is fake",
+        password="randomPass",
+        email="andysit174@gmail.com"
+    )
+
+    if user_response:
+        print(user_response.model_dump_json(indent=4))
+
+    # #TODO i dont think we ever nee "link", we can just auto generate base on the information when user wants to generate a qr.. code
+        # side not we should make this auto, so we dont have manually add this...
+    bin_create_obj = BinCreate(
+        description="my second ever bin",
+        bin_id="132",
+        link="youtube.com",
+        user_id="2"
+    )
+
+    bin_response = create_bin(bin_create_obj)
+    if bin_response:
+        print(bin_response.model_dump_json(indent=4))
+
+
