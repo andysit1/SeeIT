@@ -1,11 +1,15 @@
 from typing import Union
-from fastapi import FastAPI, Form
+from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import StreamingResponse
 from typing import Any
 from models.user_model import SignUpSchema, LoginUpSchema
 import io
 import pyqrcode
 from fastapi.responses import HTMLResponse, JSONResponse
+from components.database import UserResponse, UserCreate, BinResponse, BinCreate, create_user
+
+# import datetime
+
 
 
 app = FastAPI()
@@ -28,8 +32,31 @@ firebaseConfig = {
     easy saving on costs and experimentation
 """
 
-@app.post("/signup")
-async def create_an_account(user_data: SignUpSchema):
+
+# @app.post('/new_user')
+
+
+@app.post("/signup", response_model=UserResponse)
+async def create_an_account(user: UserCreate):
+    new_user = create_user(
+        username=user.username,
+        password=user.password,
+        email=user.email
+    )
+
+    if new_user:
+        return new_user
+    else:
+        raise HTTPException(
+            status_code=409,
+            detail="A user with this email already exists."
+        )
+
+
+#requires permissions, next big implementation.
+@app.post("/create_bin", response_class=BinResponse)
+async def create_bin(bin: BinCreate):
+    # new_bin =
     pass
 
 @app.post("/login")
@@ -37,14 +64,9 @@ async def create_access_token(user_data: LoginUpSchema):
     pass
 
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
-
 @app.get("/bin/{user_id}")
 def get_user_bins(user_id : str):
     return {"user_id" : user_id}
-
 
 # example of returning qr code...
 # used when user wants to start using their qr code.
