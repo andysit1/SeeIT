@@ -8,10 +8,6 @@ import pyqrcode
 from fastapi.responses import HTMLResponse, JSONResponse
 from components.database import UserResponse, UserCreate, BinResponse, BinCreate, create_user
 
-# import datetime
-
-
-
 app = FastAPI()
 
 # For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -51,7 +47,6 @@ async def create_an_account(user: UserCreate):
             status_code=409,
             detail="A user with this email already exists."
         )
-
 
 #requires permissions, next big implementation.
 @app.post("/create_bin", response_class=BinResponse)
@@ -122,8 +117,6 @@ async def display_context(user_id_slug: str, bin_id_slug: str):
     """
     return html_content
 
-
-
 # Endpoint to receive form data and return it as JSON and save it
 @app.post("/send/{user_id_slug}/{bin_id_slug}")
 async def receive_data(user_id_slug: str, bin_id_slug: str, input_text: str = Form(...)):
@@ -141,8 +134,6 @@ async def receive_data(user_id_slug: str, bin_id_slug: str, input_text: str = Fo
         after making new entry, rewrite the data over the last "media" object.
             might need to check if this is good db practice
     """
-
-
     return JSONResponse(
         content={
             "user_id": user_id_slug,

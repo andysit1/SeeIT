@@ -10,6 +10,10 @@ Base = declarative_base()
 # For now ill just keep all my models here for now
 # any time we need a specific function we write it here to pull and add -> its more flexible and fast for me now.
 
+#Issues
+    # how do i make the user be created without the other bin, media
+
+
 # User Model
 class User(Base):
     __tablename__ = 'users'
@@ -464,28 +468,28 @@ def test_remove_bin():
     session.close()
 
 
-if __name__ == "__main__":
-    #for now just use example to test usecase
-    user_response = create_user(
-        username="andy is fake",
-        password="randomPass",
-        email="andysit174@gmail.com"
-    )
+# if __name__ == "__main__":
+#     #for now just use example to test usecase
+#     user_response = create_user(
+#         username="andy is fake",
+#         password="randomPass",
+#         email="andysit174@gmail.com"
+#     )
 
-    if user_response:
-        print(user_response.model_dump_json(indent=4))
+#     if user_response:
+#         print(user_response.model_dump_json(indent=4))
 
-    # #TODO i dont think we ever nee "link", we can just auto generate base on the information when user wants to generate a qr.. code
-        # side not we should make this auto, so we dont have manually add this...
-    bin_create_obj = BinCreate(
-        description="my second ever bin",
-        bin_id="132",
-        link="youtube.com",
-        user_id="2"
-    )
+#     # #TODO i dont think we ever nee "link", we can just auto generate base on the information when user wants to generate a qr.. code
+#         # side not we should make this auto, so we dont have manually add this...
+#     bin_create_obj = BinCreate(
+#         description="my second ever bin",
+#         bin_id="132",
+#         link="youtube.com",
+#         user_id="2"
+#     )
 
-    bin_response = create_bin(bin_create_obj)
-    if bin_response:
-        print(bin_response.model_dump_json(indent=4))
+#     bin_response = create_bin(bin_create_obj)
+#     if bin_response:
+#         print(bin_response.model_dump_json(indent=4))
 
 
