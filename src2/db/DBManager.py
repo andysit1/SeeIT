@@ -3,7 +3,7 @@
 from sqlalchemy import create_engine, exc
 from sqlalchemy.orm import sessionmaker
 from typing import Callable, TypeVar, Optional, Any
-from UserModels import User, UserResponse, Media, MediaResponse, Bin, BinResponse
+from src2.db.UserModels import User, UserResponse, Media, MediaResponse, Bin, BinResponse
 
 T = TypeVar("T")
 import logging
@@ -41,6 +41,10 @@ class DatabaseManager:
 
     def delete(self, instance: Any) -> bool:
         return bool(self.execute_with_session(lambda session: (session.delete(instance), True)[1]))
+
+
+
+    # more specific functions
 
     def query_all(self, model: Any, filter_by: Optional[dict] = None) -> list:
         def operation(session):
