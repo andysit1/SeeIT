@@ -11,17 +11,6 @@ from components.database import UserResponse, UserCreate, BinResponse, BinCreate
 app = FastAPI()
 
 # For Firebase JS SDK v7.20.0 and later, measurementId is optional
-firebaseConfig = {
-  "apiKey": "AIzaSyA924JobIg__WmuoWcAs9mMsq93gpIJ7t4",
-  "authDomain": "seeit-3671b.firebaseapp.com",
-  "projectId": "seeit-3671b",
-  "storageBucket": "seeit-3671b.firebasestorage.app",
-  "messagingSenderId": "755805630816",
-  "appId": "1:755805630816:web:cd14e922f60cfd998dae05",
-  "measurementId": "G-K0KJGY8WZ6",
-  "databaseURL": ""
-};
-
 
 """
     Ideal keep the base static so I can just use github sites for MVP
@@ -30,8 +19,6 @@ firebaseConfig = {
 
 
 # @app.post('/new_user')
-
-
 @app.post("/signup", response_model=UserResponse)
 async def create_an_account(user: UserCreate):
     new_user = create_user(

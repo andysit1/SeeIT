@@ -42,8 +42,6 @@ class DatabaseManager:
     def delete(self, instance: Any) -> bool:
         return bool(self.execute_with_session(lambda session: (session.delete(instance), True)[1]))
 
-
-
     # more specific functions
 
     def query_all(self, model: Any, filter_by: Optional[dict] = None) -> list:
