@@ -10,6 +10,8 @@ from typing import List
 
 Base = declarative_base()
 
+from src2.util import generate_bin_id
+
 # For now ill just keep all my models here for now
 # any time we need a specific function we write it here to pull and add -> its more flexible and fast for me now.
 
@@ -52,7 +54,7 @@ class Media(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     bin_id = Column(Integer, ForeignKey('bins.id'), nullable=False)
     date = Column(DateTime, nullable=False, default=datetime.utcnow)
-    type = Column(String, nullable=False)  # Classification of media type (e.g., text, image)
+    type = Column(Integer, nullable=False)  # Classification of media type (e.g., text, image)
     content = Column(Text, nullable=False)  # Text or path to image content
     # Relationship back to Bin
     bin = relationship("Bin", back_populates="media_items")
@@ -76,8 +78,7 @@ class MediaResponse(MediaBase):
 # Bin Pydantic Models
 class BinBase(BaseModel):
     description: str
-    bin_id: int
-    link: str
+    bin_id : str = generate_bin_id()
 
 class BinCreate(BinBase):
     media_items: List[MediaCreate] = Field(default_factory=list)
